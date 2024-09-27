@@ -1,14 +1,14 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-07 11:32+0000\n"
-"Last-Translator: Adam Salač <adam@salac.me>\n"
+"PO-Revision-Date: 2023-08-31 08:31+0000\n"
+"Last-Translator: David Rapaň <david@rapan.cz>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationswifischedule/cs/>\n"
 "Language: cs\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 5.0.1-dev\n"
 
 #: applications/luci-app-wifischedule/luasrc/model/cbi/wifischedule/wifi_schedule.lua:81
 msgid "Activate wifi"
@@ -23,10 +23,6 @@ msgstr ""
 #: applications/luci-app-wifischedule/luasrc/model/cbi/wifischedule/wifi_schedule.lua:244
 msgid "Could not find required program /usr/bin/iwinfo"
 msgstr "Nepodařilo se najít požadovaný program /usr/bin/iwinfo"
-
-#: applications/luci-app-wifischedule/luasrc/controller/wifischedule/wifi_schedule.lua:45
-msgid "Cron Jobs"
-msgstr "Naplánované (cron) úlohy"
 
 #: applications/luci-app-wifischedule/luasrc/model/cbi/wifischedule/wifi_schedule.lua:154
 msgid "Day(s) of Week"
@@ -74,7 +70,7 @@ msgstr "Obecná nastavení"
 
 #: applications/luci-app-wifischedule/root/usr/share/rpcd/acl.d/luci-app-wifischedule.json:3
 msgid "Grant UCI access for luci-app-wifischedule"
-msgstr ""
+msgstr "Udělit přístup k UCI pro luci-app-wifischedule"
 
 #: applications/luci-app-wifischedule/luasrc/model/cbi/wifischedule/wifi_schedule.lua:157
 msgid "Monday"
@@ -83,10 +79,6 @@ msgstr "pondělí"
 #: applications/luci-app-wifischedule/luasrc/model/cbi/wifischedule/wifi_schedule.lua:162
 msgid "Saturday"
 msgstr "sobota"
-
-#: applications/luci-app-wifischedule/luasrc/controller/wifischedule/wifi_schedule.lua:31
-msgid "Schedule"
-msgstr "Plán"
 
 #: applications/luci-app-wifischedule/luasrc/model/cbi/wifischedule/wifi_schedule.lua:142
 msgid "Schedule events"
@@ -128,14 +120,6 @@ msgstr "úterý"
 msgid "Unload Modules (experimental; saves more power)"
 msgstr "Vypnout ovladače hardware (experimentální; šetří více energie)"
 
-#: applications/luci-app-wifischedule/luasrc/controller/wifischedule/wifi_schedule.lua:33
-msgid "View Cron Jobs"
-msgstr "Zobrazit naplánované (cron) úlohy"
-
-#: applications/luci-app-wifischedule/luasrc/controller/wifischedule/wifi_schedule.lua:32
-msgid "View Logfile"
-msgstr "Zobrazit obsah souboru se záznamem událostí"
-
 #: applications/luci-app-wifischedule/luasrc/model/cbi/wifischedule/wifi_schedule.lua:159
 msgid "Wednesday"
 msgstr "středa"
@@ -145,6 +129,17 @@ msgstr "středa"
 msgid "Wifi Schedule"
 msgstr "WiFi plán"
 
-#: applications/luci-app-wifischedule/luasrc/controller/wifischedule/wifi_schedule.lua:39
-msgid "Wifi Schedule Logfile"
-msgstr "Protokol WiFi plánu"
+#~ msgid "Cron Jobs"
+#~ msgstr "Naplánované (cron) úlohy"
+
+#~ msgid "Schedule"
+#~ msgstr "Plán"
+
+#~ msgid "View Cron Jobs"
+#~ msgstr "Zobrazit naplánované (cron) úlohy"
+
+#~ msgid "View Logfile"
+#~ msgstr "Zobrazit obsah souboru se záznamem událostí"
+
+#~ msgid "Wifi Schedule Logfile"
+#~ msgstr "Protokol WiFi plánu"

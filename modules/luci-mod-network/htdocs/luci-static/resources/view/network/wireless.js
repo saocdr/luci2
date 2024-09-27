@@ -80,7 +80,7 @@ function render_signal_badge(signalPercent, signalValue, noiseValue, wrap, mode)
 		}
 
 		if (noiseValue != null && noiseValue != 0) {
-			value = '---/%d\x0a%s'.format(noiseValue, _('dBm'));
+			value = '---/%d\xa0%s'.format(noiseValue, _('dBm'));
 			title = '%s / %s: %d %s'.format(title, _('Noise'), noiseValue, _('dBm'));
 		}
 		else {
@@ -953,7 +953,7 @@ return view.extend({
 					o = ss.taboption('advanced', form.Flag, 'mu_beamformer', _('MU-MIMO'));
 					o.default = o.disabled;
 
-					o = ss.taboption('advanced', form.Value, 'distance', _('Distance Optimization'), _('Distance to farthest network member in meters.'));
+					o = ss.taboption('advanced', form.Value, 'distance', _('Distance Optimization'), _('Distance to farthest network member in meters. Set only for distances above one kilometer; otherwise it is harmful.'));
 					o.datatype = 'or(range(0,114750),"auto")';
 					o.placeholder = 'auto';
 
@@ -1149,7 +1149,7 @@ return view.extend({
 
 					/* https://w1.fi/cgit/hostap/commit/?id=34f7c699a6bcb5c45f82ceb6743354ad79296078  */
 					/* multicast_to_unicast https://github.com/openwrt/openwrt/commit/7babb978ad9d7fc29acb1ff86afb1eb343af303a */
-					o = ss.taboption('advanced', form.Flag, 'multicast_to_unicast', _('Multi To Unicast'), _('ARP, IPv4 and IPv6 (even 802.1Q) with multicast destination MACs are unicast to the STA MAC address. Note: This is not Directed Multicast Service (DMS) in 802.11v. Note: might break receiver STA multicast expectations.'));
+					o = ss.taboption('advanced', form.Flag, 'multicast_to_unicast_all', _('Multi To Unicast'), _('ARP, IPv4 and IPv6 (even 802.1Q) with multicast destination MACs are unicast to the STA MAC address. Note: This is not Directed Multicast Service (DMS) in 802.11v. Note: might break receiver STA multicast expectations.'));
 					o.rmempty = true;
 
 					o = ss.taboption('advanced', form.Flag, 'isolate', _('Isolate Clients'), _('Prevents client-to-client communication'));
@@ -1223,10 +1223,10 @@ return view.extend({
 					var e = this.section.children.filter(function(o) { return o.option == 'encryption' })[0].formvalue(section_id),
 					    co = this.section.children.filter(function(o) { return o.option == 'cipher' })[0], c = co.formvalue(section_id);
 
-					if (value == 'wpa' || value == 'wpa2' || value == 'wpa3' || value == 'wpa3-mixed')
+					if (value == 'wpa' || value == 'wpa2' || value == 'wpa3' || value == 'wpa3-mixed' || value == 'wpa3-192')
 						uci.unset('wireless', section_id, 'key');
 
-					if (co.isActive(section_id) && e && (c == 'tkip' || c == 'ccmp' || c == 'tkip+ccmp'))
+					if (co.isActive(section_id) && e && (c == 'tkip' || c == 'ccmp' || c == 'ccmp256' || c == 'gcmp' || c == 'gcmp256' || c == 'tkip+ccmp'))
 						e += '+' + c;
 
 					uci.set('wireless', section_id, 'encryption', e);
@@ -1237,12 +1237,16 @@ return view.extend({
 				o.depends('encryption', 'wpa2');
 				o.depends('encryption', 'wpa3');
 				o.depends('encryption', 'wpa3-mixed');
+				o.depends('encryption', 'wpa3-192');
 				o.depends('encryption', 'psk');
 				o.depends('encryption', 'psk2');
 				o.depends('encryption', 'wpa-mixed');
 				o.depends('encryption', 'psk-mixed');
 				o.value('auto', _('auto'));
 				o.value('ccmp', _('Force CCMP (AES)'));
+				o.value('ccmp256', _('Force CCMP-256 (AES)'));
+				o.value('gcmp', _('Force GCMP (AES)'));
+				o.value('gcmp256', _('Force GCMP-256 (AES)'));
 				o.value('tkip', _('Force TKIP'));
 				o.value('tkip+ccmp', _('Force TKIP and CCMP (AES)'));
 				o.write = ss.children.filter(function(o) { return o.option == 'encryption' })[0].write;
@@ -1309,6 +1313,7 @@ return view.extend({
 						if (has_ap_eap192 || has_sta_eap192) {
 							crypto_modes.push(['wpa3', 'WPA3-EAP', 33]);
 							crypto_modes.push(['wpa3-mixed', 'WPA2-EAP/WPA3-EAP Mixed Mode', 32]);
+							crypto_modes.push(['wpa3-192', 'WPA3-EAP 192-bit Mode', 36]);
 						}
 
 						crypto_modes.push(['wpa2', 'WPA2-EAP', 34]);
@@ -1332,6 +1337,7 @@ return view.extend({
 							'wpa2': has_ap_eap || _('Requires hostapd with EAP support'),
 							'wpa3': has_ap_eap192 || _('Requires hostapd with EAP Suite-B support'),
 							'wpa3-mixed': has_ap_eap192 || _('Requires hostapd with EAP Suite-B support'),
+							'wpa3-192': has_ap_eap192 || _('Requires hostapd with EAP Suite-B support'),
 							'owe': has_ap_owe || _('Requires hostapd with OWE support')
 						},
 						'sta': {
@@ -1346,6 +1352,7 @@ return view.extend({
 							'wpa2': has_sta_eap || _('Requires wpa-supplicant with EAP support'),
 							'wpa3': has_sta_eap192 || _('Requires wpa-supplicant with EAP Suite-B support'),
 							'wpa3-mixed': has_sta_eap192 || _('Requires wpa-supplicant with EAP Suite-B support'),
+							'wpa3-192': has_sta_eap192 || _('Requires wpa-supplicant with EAP Suite-B support'),
 							'owe': has_sta_owe || _('Requires wpa-supplicant with OWE support')
 						},
 						'adhoc': {
@@ -1408,40 +1415,68 @@ return view.extend({
 
 
 				o = ss.taboption('encryption', form.Value, 'auth_server', _('RADIUS Authentication Server'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'host(0)';
 
 				o = ss.taboption('encryption', form.Value, 'auth_port', _('RADIUS Authentication Port'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'port';
 				o.placeholder = '1812';
 
 				o = ss.taboption('encryption', form.Value, 'auth_secret', _('RADIUS Authentication Secret'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.password = true;
 
 				o = ss.taboption('encryption', form.Value, 'acct_server', _('RADIUS Accounting Server'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'host(0)';
 
 				o = ss.taboption('encryption', form.Value, 'acct_port', _('RADIUS Accounting Port'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'port';
 				o.placeholder = '1813';
 
 				o = ss.taboption('encryption', form.Value, 'acct_secret', _('RADIUS Accounting Secret'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.password = true;
 
 				/* extra RADIUS settings start */
+				var attr_validate = function(section_id, value) {
+					if (!value)
+						return true;
+
+					if (!/^[0-9]+(:s:.+|:d:[0-9]+|:x:([0-9a-zA-Z]{2})+)?$/.test(value) )
+						return _('Must be in %s format.').format('<attr_id>[:<syntax:value>]');
+
+					return true;
+				};
+
+				var req_attr_syntax = _('Format:') + '<code>&lt;attr_id&gt;[:&lt;syntax:value&gt;]</code>' + '<br />' +
+					'<code>syntax: s = %s; '.format(_('string (UTF-8)')) + 'd = %s; '.format(_('integer')) + 'x = %s</code>'.format(_('octet string'))
+
+				/* https://w1.fi/cgit/hostap/commit/?id=af35e7af7f8bb1ca9f0905b4074fb56a264aa12b */
+				o = ss.taboption('encryption', form.DynamicList, 'radius_auth_req_attr', _('RADIUS Access-Request attributes'),
+					_('Attributes to add/replace in each request.') + '<br />' + req_attr_syntax );
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
+				o.rmempty = true;
+				o.validate = attr_validate;
+				o.placeholder = '126:s:Operator';
+
+				o = ss.taboption('encryption', form.DynamicList, 'radius_acct_req_attr', _('RADIUS Accounting-Request attributes'),
+					_('Attributes to add/replace in each request.') + '<br />' + req_attr_syntax );
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
+				o.rmempty = true;
+				o.validate = attr_validate;
+				o.placeholder = '77:x:74657374696e67';
+
 				o = ss.taboption('encryption', form.ListValue, 'dynamic_vlan', _('RADIUS Dynamic VLAN Assignment'), _('Required: Rejects auth if RADIUS server does not provide appropriate VLAN attributes.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.value('0', _('Disabled'));
 				o.value('1', _('Optional'));
 				o.value('2', _('Required'));
@@ -1450,40 +1485,40 @@ return view.extend({
 				}
 
 				o = ss.taboption('encryption', form.Flag, 'per_sta_vif', _('RADIUS Per STA VLAN'), _('Each STA is assigned its own AP_VLAN interface.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 				//hostapd internally defaults to vlan_naming=1 even with dynamic VLAN off
 				o = ss.taboption('encryption', form.Flag, 'vlan_naming', _('RADIUS VLAN Naming'), _('Off: <code>vlanXXX</code>, e.g., <code>vlan1</code>. On: <code>vlan_tagged_interface.XXX</code>, e.g. <code>eth0.1</code>.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 				o = ss.taboption('encryption', widgets.DeviceSelect, 'vlan_tagged_interface', _('RADIUS VLAN Tagged Interface'), _('E.g. eth0, eth1'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.size = 1;
 				o.rmempty = true;
 				o.multiple = false;
 				o.noaliases = true;
-				o.nobridges = true;
 				o.nocreate = true;
 				o.noinactive = true;
 
 				o = ss.taboption('encryption', form.Value, 'vlan_bridge', _('RADIUS VLAN Bridge Naming Scheme'), _('E.g. <code>br-vlan</code> or <code>brvlan</code>.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
+
 				/* extra RADIUS settings end */
 
 				o = ss.taboption('encryption', form.Value, 'dae_client', _('DAE-Client'), _('Dynamic Authorization Extension client.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'host(0)';
 
 				o = ss.taboption('encryption', form.Value, 'dae_port', _('DAE-Port'), _('Dynamic Authorization Extension port.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.datatype = 'port';
 				o.placeholder = '3799';
 
 				o = ss.taboption('encryption', form.Value, 'dae_secret', _('DAE-Secret'), _('Dynamic Authorization Extension secret.'));
-				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+				add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 				o.rmempty = true;
 				o.password = true;
 
@@ -1556,13 +1591,13 @@ return view.extend({
 					var has_80211r = L.hasSystemFeature('hostapd', '11r') || L.hasSystemFeature('hostapd', 'eap');
 
 					o = ss.taboption('roaming', form.Flag, 'ieee80211r', _('802.11r Fast Transition'), _('Enables fast roaming among access points that belong to the same Mobility Domain'));
-					add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa2', 'wpa3', 'wpa3-mixed', , 'wpa3-192'] });
 					if (has_80211r)
-						add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk', 'psk2', 'psk-mixed', 'sae', 'sae-mixed'] });
+						add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk2', 'psk-mixed', 'sae', 'sae-mixed'] });
 					o.rmempty = true;
 
 					o = ss.taboption('roaming', form.Value, 'nasid', _('NAS ID'), _('Used for two different purposes: RADIUS NAS ID and 802.11r R0KH-ID. Not needed with normal WPA(2)-PSK.'));
-					add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 					o.depends({ ieee80211r: '1' });
 					o.rmempty = true;
 
@@ -1585,7 +1620,7 @@ return view.extend({
 					o.rmempty = true;
 
 					o = ss.taboption('roaming', form.Flag, 'ft_psk_generate_local', _('Generate PMK locally'), _('When using a PSK, the PMK can be automatically generated. When enabled, the R0/R1 key options below are not applied. Disable this to use the R0 and R1 key options.'));
-					o.depends({ ieee80211r: '1' });
+					add_dependency_permutations(o, { ieee80211r: ['1'], mode: ['ap', 'ap-wds'], encryption: ['psk2', 'psk-mixed'] });
 					o.default = o.enabled;
 					o.rmempty = false;
 
@@ -1606,19 +1641,19 @@ return view.extend({
 					o.placeholder = '0';
 					o.rmempty = true;
 
-					o = ss.taboption('roaming', form.DynamicList, 'r0kh', _('External R0 Key Holder List'), _('List of R0KHs in the same Mobility Domain. <br />Format: MAC-address,NAS-Identifier,128-bit key as hex string. <br />This list is used to map R0KH-ID (NAS Identifier) to a destination MAC address when requesting PMK-R1 key from the R0KH that the STA used during the Initial Mobility Domain Association.'));
+					o = ss.taboption('roaming', form.DynamicList, 'r0kh', _('External R0 Key Holder List'), _('List of R0KHs in the same Mobility Domain. <br />Format: MAC-address,NAS-Identifier,256-bit key as hex string. <br />This list is used to map R0KH-ID (NAS Identifier) to a destination MAC address when requesting PMK-R1 key from the R0KH that the STA used during the Initial Mobility Domain Association.'));
 					o.depends({ ieee80211r: '1' });
 					o.rmempty = true;
 
-					o = ss.taboption('roaming', form.DynamicList, 'r1kh', _('External R1 Key Holder List'), _ ('List of R1KHs in the same Mobility Domain. <br />Format: MAC-address,R1KH-ID as 6 octets with colons,128-bit key as hex string. <br />This list is used to map R1KH-ID to a destination MAC address when sending PMK-R1 key from the R0KH. This is also the list of authorized R1KHs in the MD that can request PMK-R1 keys.'));
+					o = ss.taboption('roaming', form.DynamicList, 'r1kh', _('External R1 Key Holder List'), _ ('List of R1KHs in the same Mobility Domain. <br />Format: MAC-address,R1KH-ID as 6 octets with colons,256-bit key as hex string. <br />This list is used to map R1KH-ID to a destination MAC address when sending PMK-R1 key from the R0KH. This is also the list of authorized R1KHs in the MD that can request PMK-R1 keys.'));
 					o.depends({ ieee80211r: '1' });
 					o.rmempty = true;
 					// End of 802.11r options
 
 					// Probe 802.11k and 802.11v support via EAP support (full hostapd has EAP)
 					if (L.hasSystemFeature('hostapd', 'eap')) {
-						/* 802.11k settings start */						o =
-						 ss.taboption('roaming', form.Flag, 'ieee80211k', _('802.11k RRM'), _('Radio Resource Measurement - Sends beacons to assist roaming. Not all clients support this.'));
+						/* 802.11k settings start */
+						o = ss.taboption('roaming', form.Flag, 'ieee80211k', _('802.11k RRM'), _('Radio Resource Measurement - Sends beacons to assist roaming. Not all clients support this.'));
 						// add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk', 'psk2', 'psk-mixed', 'sae', 'sae-mixed'] });
 						o.depends('mode', 'ap');
 						o.depends('mode', 'ap-wds');
@@ -1671,13 +1706,13 @@ return view.extend({
 					o.value('ttls', 'TTLS');
 					o.value('peap', 'PEAP');
 					o.value('fast', 'FAST');
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 					o = ss.taboption('encryption', form.Flag, 'ca_cert_usesystem', _('Use system certificates'), _("Validate server certificate using built-in system CA bundle,<br />requires the \"ca-bundle\" package"));
 					o.enabled = '1';
 					o.disabled = '0';
 					o.default = o.disabled;
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 					o.validate = function(section_id, value) {
 						if (value == '1' && !L.hasSystemFeature('cabundle')) {
 							return _("This option cannot be used because the ca-bundle package is not installed.");
@@ -1686,28 +1721,28 @@ return view.extend({
 					};
 
 					o = ss.taboption('encryption', form.FileUpload, 'ca_cert', _('Path to CA-Certificate'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], ca_cert_usesystem: ['0'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], ca_cert_usesystem: ['0'] });
 
 					o = ss.taboption('encryption', form.Value, 'subject_match', _('Certificate constraint (Subject)'), _("Certificate constraint substring - e.g. /CN=wifi.mycompany.com<br />See `logread -f` during handshake for actual values"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 					o = ss.taboption('encryption', form.DynamicList, 'altsubject_match', _('Certificate constraint (SAN)'), _("Certificate constraint(s) via Subject Alternate Name values<br />(supported attributes: EMAIL, DNS, URI) - e.g. DNS:wifi.mycompany.com"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 					o = ss.taboption('encryption', form.DynamicList, 'domain_match', _('Certificate constraint (Domain)'), _("Certificate constraint(s) against DNS SAN values (if available)<br />or Subject CN (exact match)"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 					o = ss.taboption('encryption', form.DynamicList, 'domain_suffix_match', _('Certificate constraint (Wildcard)'), _("Certificate constraint(s) against DNS SAN values (if available)<br />or Subject CN (suffix match)"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'] });
 
 					o = ss.taboption('encryption', form.FileUpload, 'client_cert', _('Path to Client-Certificate'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], eap_type: ['tls'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], eap_type: ['tls'] });
 
 					o = ss.taboption('encryption', form.FileUpload, 'priv_key', _('Path to Private Key'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], eap_type: ['tls'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], eap_type: ['tls'] });
 
 					o = ss.taboption('encryption', form.Value, 'priv_key_pwd', _('Password of Private Key'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], eap_type: ['tls'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], eap_type: ['tls'] });
 					o.password = true;
 
 					o = ss.taboption('encryption', form.ListValue, 'auth', _('Authentication'));
@@ -1719,7 +1754,7 @@ return view.extend({
 					o.value('EAP-MD5', 'EAP-MD5');
 					o.value('EAP-MSCHAPV2', 'EAP-MSCHAPv2');
 					o.value('EAP-TLS', 'EAP-TLS');
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], eap_type: ['fast', 'peap', 'ttls'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], eap_type: ['fast', 'peap', 'ttls'] });
 
 					o.validate = function(section_id, value) {
 						var eo = this.section.children.filter(function(o) { return o.option == 'eap_type' })[0],
@@ -1735,7 +1770,7 @@ return view.extend({
 					o.enabled = '1';
 					o.disabled = '0';
 					o.default = o.disabled;
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 					o.validate = function(section_id, value) {
 						if (value == '1' && !L.hasSystemFeature('cabundle')) {
 							return _("This option cannot be used because the ca-bundle package is not installed.");
@@ -1744,38 +1779,38 @@ return view.extend({
 					};
 
 					o = ss.taboption('encryption', form.FileUpload, 'ca_cert2', _('Path to inner CA-Certificate'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'], ca_cert2_usesystem: ['0'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'], ca_cert2_usesystem: ['0'] });
 
 					o = ss.taboption('encryption', form.Value, 'subject_match2', _('Inner certificate constraint (Subject)'), _("Certificate constraint substring - e.g. /CN=wifi.mycompany.com<br />See `logread -f` during handshake for actual values"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 
 					o = ss.taboption('encryption', form.DynamicList, 'altsubject_match2', _('Inner certificate constraint (SAN)'), _("Certificate constraint(s) via Subject Alternate Name values<br />(supported attributes: EMAIL, DNS, URI) - e.g. DNS:wifi.mycompany.com"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 
 					o = ss.taboption('encryption', form.DynamicList, 'domain_match2', _('Inner certificate constraint (Domain)'), _("Certificate constraint(s) against DNS SAN values (if available)<br />or Subject CN (exact match)"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 
 					o = ss.taboption('encryption', form.DynamicList, 'domain_suffix_match2', _('Inner certificate constraint (Wildcard)'), _("Certificate constraint(s) against DNS SAN values (if available)<br />or Subject CN (suffix match)"));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 
 					o = ss.taboption('encryption', form.FileUpload, 'client_cert2', _('Path to inner Client-Certificate'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 
 					o = ss.taboption('encryption', form.FileUpload, 'priv_key2', _('Path to inner Private Key'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 
 					o = ss.taboption('encryption', form.Value, 'priv_key2_pwd', _('Password of inner Private Key'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], auth: ['EAP-TLS'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], auth: ['EAP-TLS'] });
 					o.password = true;
 
 					o = ss.taboption('encryption', form.Value, 'identity', _('Identity'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], eap_type: ['fast', 'peap', 'tls', 'ttls'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], eap_type: ['fast', 'peap', 'tls', 'ttls'] });
 
 					o = ss.taboption('encryption', form.Value, 'anonymous_identity', _('Anonymous Identity'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], eap_type: ['fast', 'peap', 'tls', 'ttls'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], eap_type: ['fast', 'peap', 'tls', 'ttls'] });
 
 					o = ss.taboption('encryption', form.Value, 'password', _('Password'));
-					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed'], eap_type: ['fast', 'peap', 'ttls'] });
+					add_dependency_permutations(o, { mode: ['sta', 'sta-wds'], encryption: ['wpa', 'wpa2', 'wpa3', 'wpa3-mixed', 'wpa3-192'], eap_type: ['fast', 'peap', 'ttls'] });
 					o.password = true;
 
 
@@ -1813,6 +1848,27 @@ return view.extend({
 						o.datatype = 'uinteger';
 						o.placeholder = '201';
 						o.rmempty = true;
+
+						if (L.hasSystemFeature('hostapd', 'ocv') || L.hasSystemFeature('wpasupplicant', 'ocv')) {
+							o = ss.taboption('encryption', form.ListValue, 'ocv', _('Operating Channel Validation'), _("Note: Workaround mode allows a STA that claims OCV capability to connect even if the STA doesn't send OCI or negotiate PMF."));
+							o.value('0', _('Disabled'));
+							o.value('1', _('Enabled'));
+							o.value('2', _('Enabled (workaround mode)'));
+							o.default = '0';
+							o.depends('ieee80211w', '1');
+							o.depends('ieee80211w', '2');
+
+							o.validate = function(section_id, value) {
+								var modeopt = this.section.children.filter(function(o) { return o.option == 'mode' })[0],
+								modeval = modeopt.formvalue(section_id);
+
+								if ((value == '2') && ((modeval == 'sta') || (modeval == 'sta-wds'))) {
+									return _('Workaround mode can only be used when acting as an access point.');
+								}
+
+								return true;
+							}
+						}
 
 						o = ss.taboption('encryption', form.Flag, 'wpa_disable_eapol_key_retries', _('Enable key reinstallation (KRACK) countermeasures'), _('Complicates key reinstallation attacks on the client side by disabling retransmission of EAPOL-Key frames that are used to install keys. This workaround might cause interoperability issues and reduced robustness of key negotiation especially in environments with heavy traffic load.'));
 						add_dependency_permutations(o, { mode: ['ap', 'ap-wds'], encryption: ['psk2', 'psk-mixed', 'sae', 'sae-mixed', 'wpa2', 'wpa3', 'wpa3-mixed'] });
@@ -2009,6 +2065,26 @@ return view.extend({
 					uci.unset('wireless', radioDev.getName(), 'disabled');
 				}
 
+				var htmodes = radioDev.getHTModes();
+
+				if (bss.vht_operation && htmodes && htmodes.indexOf('VHT20') !== -1) {
+					for (var w = bss.vht_operation.channel_width; w >= 20; w /= 2) {
+						if (htmodes.indexOf('VHT'+w) !== -1) {
+							uci.set('wireless', radioDev.getName(), 'htmode', 'VHT'+w);
+							break;
+						}
+					}
+				}
+				else if (bss.ht_operation && htmodes && htmodes.indexOf('HT20') !== -1) {
+					var w = (bss.ht_operation.secondary_channel_offset == 'no secondary') ? 20 : 40;
+					uci.set('wireless', radioDev.getName(), 'htmode', 'HT'+w);
+				}
+				else {
+					uci.remove('wireless', radioDev.getName(), 'htmode');
+				}
+
+				uci.set('wireless', radioDev.getName(), 'channel', bss.channel);
+
 				section_id = next_free_sid(wifi_sections.length);
 
 				uci.add('wireless', 'wifi-iface', section_id);
@@ -2108,7 +2184,9 @@ return view.extend({
 
 			replace = s2.option(form.Flag, 'replace', _('Replace wireless configuration'), _('Check this option to delete the existing networks from this radio.'));
 
-			name = s2.option(form.Value, 'name', _('Name of the new network'), _('The allowed characters are: <code>A-Z</code>, <code>a-z</code>, <code>0-9</code> and <code>_</code>'));
+			name = s2.option(form.Value, 'name', _('Name of the new network'),
+				_('Name for OpenWrt network configuration. (No relation to wireless network name/SSID)') + '<br />' +
+				_('The allowed characters are: <code>A-Z</code>, <code>a-z</code>, <code>0-9</code> and <code>_</code>'));
 			name.datatype = 'uciname';
 			name.default = 'wwan';
 			name.rmempty = false;
@@ -2162,7 +2240,7 @@ return view.extend({
 			uci.add('wireless', 'wifi-iface', section_id);
 			uci.set('wireless', section_id, 'device', radioDev.getName());
 			uci.set('wireless', section_id, 'mode', 'ap');
-			uci.set('wireless', section_id, 'ssid', 'OpenWrt');
+			uci.set('wireless', section_id, 'ssid', 'ImmortalWrt');
 			uci.set('wireless', section_id, 'encryption', 'none');
 
 			this.addedSection = section_id;
@@ -2272,5 +2350,7 @@ return view.extend({
 
 			return E([ nodes, E('h3', _('Associated Stations')), table ]);
 		}, this, m));
-	}
+	},
+
+	handleReset: null
 });

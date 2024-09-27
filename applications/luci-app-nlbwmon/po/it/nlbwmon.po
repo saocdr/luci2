@@ -1,14 +1,14 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-07-03 12:40+0000\n"
-"Last-Translator: random r <epsilin@yopmail.com>\n"
+"PO-Revision-Date: 2024-07-01 12:20+0000\n"
+"Last-Translator: moreno matassini <morenomatassini95@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsnlbwmon/it/>\n"
 "Language: it\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0-dev\n"
+"X-Generator: Weblate 5.7-dev\n"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:563
 msgid "%d IPv4-only hosts"
@@ -36,11 +36,11 @@ msgstr "-1 - Riavvia ogni ultimo giorno del mese"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:94
 msgid "-7 - Restart a week before end of month"
-msgstr ""
+msgstr "-7 - Riavvia una settimana prima della fine del mese"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:92
 msgid "1 - Restart every 1st of month"
-msgstr ""
+msgstr "1 - Riavvia ogni primo giorno del mese"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:161
 msgid "10m - frequent commits at the expense of flash wear"
@@ -155,7 +155,7 @@ msgstr ""
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:915
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:962
 msgid "Collecting data..."
-msgstr "Raccolta dei dati..."
+msgstr "Raccolta dati..."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:157
 msgid "Commit interval"
@@ -282,7 +282,7 @@ msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:954
 msgid "Family"
-msgstr ""
+msgstr "Famiglia"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:73
 msgid "Fixed interval"
@@ -296,7 +296,7 @@ msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:59
 msgid "General Settings"
-msgstr "Impostazioni generali"
+msgstr "Impostazioni Generali"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:64
 msgid "Generate Backup"
@@ -458,7 +458,7 @@ msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:334
 msgid "Source IP"
-msgstr ""
+msgstr "IP di origine"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:96
 msgid "Start date"
@@ -535,7 +535,7 @@ msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:75
 msgid "Warning"
-msgstr ""
+msgstr "Avviso"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:152
 msgid ""

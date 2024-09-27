@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2023-07-03 09:55+0000\n"
-"Last-Translator: random r <epsilin@yopmail.com>\n"
+"PO-Revision-Date: 2024-04-19 13:18+0000\n"
+"Last-Translator: ettore <hettore.giacomini@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsuhttpd/it/>\n"
 "Language: it\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0-dev\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: applications/luci-app-uhttpd/htdocs/luci-static/resources/view/uhttpd/uhttpd.js:160
 msgid ""
@@ -41,7 +41,7 @@ msgstr "Cartella di base per i file da servire"
 
 #: applications/luci-app-uhttpd/htdocs/luci-static/resources/view/uhttpd/uhttpd.js:27
 #: applications/luci-app-uhttpd/htdocs/luci-static/resources/view/uhttpd/uhttpd.js:55
-msgid "Bind to specific interface:port (by specifying interface address"
+msgid "Bind to specific interface:port (by specifying interface address)"
 msgstr ""
 "Associa ad una specifica interfaccia:porta (specificando l'indirizzo "
 "dell'interfaccia"
@@ -104,6 +104,8 @@ msgstr "Abilita supporto risorse cross-origine JSON-RPC"
 msgid ""
 "Files can only be uploaded and saved to the /etc/luci-uploads directory."
 msgstr ""
+"I file possono essere caricati e salvati solo nella cartella /etc/luci-"
+"uploads."
 
 #: applications/luci-app-uhttpd/htdocs/luci-static/resources/view/uhttpd/uhttpd.js:24
 msgid "For settings primarily geared to serving more than the web UI"
@@ -121,7 +123,7 @@ msgstr "Percorso reale completo per il gestore per gli script Lua"
 
 #: applications/luci-app-uhttpd/htdocs/luci-static/resources/view/uhttpd/uhttpd.js:23
 msgid "General Settings"
-msgstr "Impostazioni generali"
+msgstr "Impostazioni Generali"
 
 #: applications/luci-app-uhttpd/root/usr/share/rpcd/acl.d/luci-app-uhttpd.json:3
 msgid "Grant UCI access for luci-app-uhttpd"
